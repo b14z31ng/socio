@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Secure Social{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+            color: #fff;
+            padding: 0 0 0 0;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .navbar .brand {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+        }
+        .navbar .brand i {
+            margin-right: 10px;
+        }
+        .navbar .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        .navbar .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 18px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .navbar .nav-links a:hover {
+            color: #ffd600;
+        }
+        .navbar .nav-links i {
+            margin-right: 7px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(25, 118, 210, 0.10);
+            padding: 36px 44px 44px 44px;
+        }
+        h2 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin: 16px 0 6px 0;
+            color: #2d3a4b;
+        }
+        input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cfd8dc;
+            border-radius: 5px;
+            margin-bottom: 12px;
+            font-size: 1em;
+        }
+        button {
+            background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #125ea2 0%, #1976d2 100%);
+        }
+        a {
+            color: #1976d2;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .message {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 10px 16px;
+            border-radius: 5px;
+            margin-bottom: 18px;
+        }
+        ul {
+            padding-left: 18px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .profile-icon {
+            font-size: 24px;
+            vertical-align: middle;
+        }
+        .center {
+            text-align: center;
+        }
+        .icon-text {
+            display: flex;
+            align-items: center;
+        }
+        .icon-text i {
+            margin-right: 8px;
+        }
+        @media (max-width: 800px) {
+            .container {
+                padding: 18px 6vw 24px 6vw;
+            }
+            .navbar .brand {
+                font-size: 1.1em;
+                padding: 12px 10px;
+            }
+            .navbar .nav-links a {
+                margin: 0 8px;
+                font-size: 1em;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="brand"><i class="fa-solid fa-shield-halved"></i> My Secure Social</div>
+        <div class="nav-links">
+            <a href="/post/"><i class="fa-solid fa-newspaper"></i> Newsfeed</a>
+            <a href="/profile/"><i class="fa-solid fa-user"></i> Profile</a>
+            <a href="/messages/"><i class="fa-solid fa-envelope"></i> Messages</a>
+            <a href="/users/search/"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+            <a href="/logout/"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{% extends 'main/base.html' %}
+{% block title %}Newsfeed | My Secure Social{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+{% endblock %}
+{% block content %}
+<div class="center">
+    <h2 style="margin-bottom: 10px;">Newsfeed</h2>
+    <form method="post" enctype="multipart/form-data" style="margin-bottom: 32px; background: #f9f9f9; padding: 18px 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        {% csrf_token %}
+        <textarea name="content" rows="3" placeholder="What's on your mind?" style="width: 100%; border-radius: 8px; border: 1px solid #cfd8dc; padding: 10px;"></textarea><br>
+        <input type="file" name="media" accept="image/*,video/*" style="margin-top: 8px;">
+        <button type="submit" style="margin-top: 8px;">Post</button>
+    </form>
+</div>
+<div style="max-width: 600px; margin: 0 auto;">
+    {% for post in posts %}
+        <div style="background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; padding: 18px 24px;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                {% with p=post.user.profile %}
+                    {% if p.get_profile_pic_url %}
+                        <img src="{{ p.get_profile_pic_url }}" alt="Profile Pic" style="width:32px; height:32px; object-fit:cover; border-radius:50%; margin-right:12px;" />
+                    {% else %}
+                        <span class="profile-icon" style="font-size: 32px; color: #1976d2; margin-right: 12px;">&#128100;</span>
+                    {% endif %}
+                {% endwith %}
+                <div>
+                    <strong>{{ post.user.username }}</strong><br>
+                    <span style="color: #90a4ae; font-size: 0.95em;">{{ post.created_at|date:'M d, Y H:i' }}</span>
+                </div>
+            </div>
+            {% if post.media %}
+                {% if post.media.name|lower|slice:"-4:" == ".mp4" %}
+                    <video class="plyr" controls preload="metadata" style="max-width:100%; border-radius:8px; margin-top:10px;">
+                        <source src="{{ post.media.url }}" type="video/mp4">
+                    </video>
+                {% else %}
+                    <img src="{{ post.media.url }}" loading="lazy" style="max-width:100%; border-radius:8px; margin-top:10px;" />
+                {% endif %}
+            {% endif %}
+            <div style="font-size: 1.1em; color: #263238; margin-top: 8px;">
+                {{ post.get_content }}
+            </div>
+        </div>
+    {% empty %}
+        <div class="center" style="color: #b0bec5;">No posts yet. Start the conversation!</div>
+    {% endfor %}
+</div>
+<div class="center" style="margin: 24px 0;">
+    {% if posts.has_previous %}
+        <a href="?page={{ posts.previous_page_number }}">&laquo; Previous</a>
+    {% endif %}
+    <span style="margin: 0 10px;">Page {{ posts.number }} of {{ posts.paginator.num_pages }}</span>
+    {% if posts.has_next %}
+        <a href="?page={{ posts.next_page_number }}">Next &raquo;</a>
+    {% endif %}
+</div>
+<script>document.addEventListener('DOMContentLoaded', () => { if(window.Plyr){ Plyr.setup('.plyr'); } });</script>
+{% endblock %}

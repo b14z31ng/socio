@@ -1,0 +1,28 @@
+{% extends 'main/base.html' %}
+{% block title %}Inbox | My Secure Social{% endblock %}
+{% block content %}
+<h2><i class="fa-solid fa-envelope"></i> Inbox</h2>
+<a href="/messages/send/"><button><i class="fa-solid fa-paper-plane"></i> Send Message</button></a>
+<h3>Received Messages</h3>
+<ul>
+    {% for msg in messages_received %}
+        <li><b>From:</b> {{ msg.sender.username }}<br>
+            <b>At:</b> {{ msg.timestamp|date:'M d, Y H:i' }}<br>
+            <b>Message:</b> {{ msg.get_content }}
+        </li>
+    {% empty %}
+        <li>No messages received.</li>
+    {% endfor %}
+</ul>
+<h3>Sent Messages</h3>
+<ul>
+    {% for msg in messages_sent %}
+        <li><b>To:</b> {{ msg.receiver.username }}<br>
+            <b>At:</b> {{ msg.timestamp|date:'M d, Y H:i' }}<br>
+            <b>Message:</b> {{ msg.get_content }}
+        </li>
+    {% empty %}
+        <li>No messages sent.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

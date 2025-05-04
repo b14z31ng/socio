@@ -1,0 +1,14 @@
+{% extends 'main/base.html' %}
+{% block title %}Login | My Secure Social{% endblock %}
+{% block content %}
+<h2><i class="fa-solid fa-right-to-bracket"></i> Login</h2>
+<form method="post">
+    {% csrf_token %}
+    <label for="username"><i class="fa-solid fa-user"></i> Username:</label>
+    <input type="text" id="username" name="username" required><br>
+    <label for="password"><i class="fa-solid fa-lock"></i> Password:</label>
+    <input type="password" id="password" name="password" required><br>
+    <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+</form>
+<p>Don't have an account? <a href="/signup/"><i class="fa-solid fa-user-plus"></i> Sign up here</a></p>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'main/base.html' %}
+{% block title %}Send Message | My Secure Social{% endblock %}
+{% block content %}
+<h2><i class="fa-solid fa-paper-plane"></i> Send Message</h2>
+<form method="post">
+    {% csrf_token %}
+    <label for="receiver"><i class="fa-solid fa-user"></i> To:</label>
+    <select name="receiver" id="receiver" required>
+        <option value="">Select a user</option>
+        {% for user in users %}
+            <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+    </select><br><br>
+    <label for="content"><i class="fa-solid fa-message"></i> Message:</label>
+    <textarea name="content" id="content" rows="3" required style="width:100%;"></textarea><br>
+    <button type="submit"><i class="fa-solid fa-paper-plane"></i> Send</button>
+</form>
+{% endblock %}

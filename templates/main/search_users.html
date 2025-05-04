@@ -1,0 +1,19 @@
+{% extends 'main/base.html' %}
+{% block title %}Search Users | My Secure Social{% endblock %}
+{% block content %}
+<h2><i class="fa-solid fa-magnifying-glass"></i> Search Users</h2>
+<form method="get" action="">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by username..." style="width: 60%; padding: 8px;">
+    <button type="submit"><i class="fa-solid fa-search"></i> Search</button>
+</form>
+<ul style="margin-top: 24px;">
+    {% for user in users %}
+        <li style="margin-bottom: 12px;">
+            <i class="fa-solid fa-user"></i> {{ user.username }}
+            <a href="/messages/send/?receiver={{ user.id }}" style="margin-left: 12px;"><i class="fa-solid fa-paper-plane"></i> Message</a>
+        </li>
+    {% empty %}
+        <li>No users found.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

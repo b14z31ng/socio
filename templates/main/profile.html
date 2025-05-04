@@ -1,0 +1,70 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}Profile | My Secure Social{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+{% endblock %}
+{% block content %}
+<div class="center">
+    <form method="post" enctype="multipart/form-data" style="margin-bottom: 18px;">
+        {% csrf_token %}
+        <div style="display:inline-block; background:#e3f2fd; border-radius:50%; width:90px; height:90px; line-height:90px; margin-bottom:10px; overflow:hidden;">
+            {% if profile.get_profile_pic_url %}
+                <img src="{{ profile.get_profile_pic_url }}" alt="Profile Pic" style="width:90px; height:90px; object-fit:cover; border-radius:50%;" />
+            {% else %}
+                <span class="profile-icon" style="font-size:54px; color:#1976d2;">&#128100;</span>
+            {% endif %}
+        </div>
+        <br>
+        <input type="file" name="profile_pic" accept="image/*" style="margin-top:8px;">
+        <button type="submit" style="margin-top:8px;">Update Profile Picture</button>
+    </form>
+    <h2 style="margin-bottom:4px;">{{ profile.user.username }}
+        {% if request.user != profile.user %}
+            <a href="/messages/send/?receiver={{ profile.user.id }}" title="Send Message" style="margin-left:10px;"><i class="fa-solid fa-paper-plane"></i></a>
+        {% endif %}
+    </h2>
+    <p style="color:#607d8b; margin-top:0;">Member since {{ profile.user.date_joined|date:'F Y' }}</p>
+</div>
+<hr>
+<h2 class="center">Your Recent Posts</h2>
+<div style="max-width: 600px; margin: 0 auto;">
+    {% for post in posts %}
+        {% if post.user.username == profile.user.username %}
+        <div style="background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; padding: 18px 24px;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                {% if profile.get_profile_pic_url %}
+                    <img src="{{ profile.get_profile_pic_url }}" alt="Profile Pic" style="width:32px; height:32px; object-fit:cover; border-radius:50%; margin-right:12px;" />
+                {% else %}
+                    <span class="profile-icon" style="font-size: 32px; color: #1976d2; margin-right: 12px;">&#128100;</span>
+                {% endif %}
+                <div>
+                    <strong>{{ post.user.username }}</strong><br>
+                    <span style="color: #90a4ae; font-size: 0.95em;">{{ post.created_at|date:'M d, Y H:i' }}</span>
+                </div>
+            </div>
+            {% if post.media %}
+                {% if post.media.name|lower|slice:"-4:" == ".mp4" %}
+                    <video class="plyr" controls preload="metadata" style="max-width:100%; border-radius:8px; margin-top:10px;">
+                        <source src="{{ post.media.url }}" type="video/mp4">
+                    </video>
+                {% else %}
+                    <img src="{{ post.media.url }}" loading="lazy" style="max-width:100%; border-radius:8px; margin-top:10px;" />
+                {% endif %}
+            {% endif %}
+            <div style="font-size: 1.1em; color: #263238; margin-top: 8px;">
+                {{ post.get_content }}
+            </div>
+        </div>
+        {% endif %}
+    {% empty %}
+        <div class="center" style="color: #b0bec5;">No posts yet.</div>
+    {% endfor %}
+</div>
+<div class="center" style="margin-top:24px;">
+    <a href="/post/"><button>+ Newsfeed</button></a>
+    <a href="/logout/" style="margin-left:16px;"><button style="background:#b71c1c;">Logout</button></a>
+</div>
+<script>document.addEventListener('DOMContentLoaded', () => { if(window.Plyr){ Plyr.setup('.plyr'); } });</script>
+{% endblock %}
