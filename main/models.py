@@ -77,7 +77,7 @@ class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     encrypted_content = models.TextField(default="", blank=True)
     content_mac = models.CharField(max_length=64, default="", blank=True)
-    media = models.FileField(upload_to='', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'])])
+    media = models.FileField(upload_to='posts/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'])])
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
