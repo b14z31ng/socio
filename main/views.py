@@ -196,26 +196,3 @@ def remove_friend(request, user_id):
 @login_required
 def user_profile(request, user_id):
     other = get_object_or_404(User, id=user_id)
-    profile = getattr(other, 'profile', None)
-    if not profile:
-        profile = None
-    user = request.user
-    is_friend = FriendRequest.objects.filter(
-        ((models.Q(from_user=user, to_user=other) | models.Q(from_user=other, to_user=user)),
-         models.Q(status='accepted'))
-    ).exists()
-    req_sent = FriendRequest.objects.filter(from_user=user, to_user=other, status='pending').exists()
-    req_received = FriendRequest.objects.filter(from_user=other, to_user=user, status='pending').exists()
-    can_add = not is_friend and not req_sent and not req_received and user != other
-    can_unfriend = is_friend
-    can_accept = req_received
-    return render(request, 'main/user_profile.html', {
-        'profile_user': other,
-        'profile': profile,
-        'is_friend': is_friend,
-        'can_add': can_add,
-        'can_unfriend': can_unfriend,
-        'can_accept': can_accept,
-        'req_sent': req_sent,
-        'req_received': req_received,
-    })
