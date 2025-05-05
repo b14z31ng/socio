@@ -1,0 +1,58 @@
+{% extends 'main/base.html' %}
+{% block title %}Friends | My Secure Social{% endblock %}
+{% block content %}
+<h2>Your Friends</h2>
+{% if friends %}
+<ul>
+    {% for friend in friends %}
+    <li>
+        <a href="{% url 'user_profile' friend.id %}">{{ friend.username }}</a>
+        <form action="{% url 'remove_friend' friend.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Unfriend</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>You have no friends yet.</p>
+{% endif %}
+<hr>
+<h3>Incoming Friend Requests</h3>
+{% if incoming %}
+<ul>
+    {% for req in incoming %}
+    <li>
+        <a href="{% url 'user_profile' req.from_user.id %}">{{ req.from_user.username }}</a>
+        <form action="{% url 'accept_friend_request' req.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Accept</button>
+        </form>
+        <form action="{% url 'decline_friend_request' req.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Decline</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No incoming requests.</p>
+{% endif %}
+<hr>
+<h3>Outgoing Friend Requests</h3>
+{% if outgoing %}
+<ul>
+    {% for req in outgoing %}
+    <li>
+        <a href="{% url 'user_profile' req.to_user.id %}">{{ req.to_user.username }}</a>
+        <form action="{% url 'cancel_friend_request' req.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Cancel</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No outgoing requests.</p>
+{% endif %}
+{% endblock %}

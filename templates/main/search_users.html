@@ -9,7 +9,7 @@
 <ul style="margin-top: 24px;">
     {% for user in users %}
         <li style="margin-bottom: 12px;">
-            <i class="fa-solid fa-user"></i> {{ user.username }}
+            <i class="fa-solid fa-user"></i> <a href="{% url 'user_profile' user.id %}">{{ user.username }}</a>
             <form method="post" action="" style="display:inline; margin-left:12px;">
                 {% csrf_token %}
                 <button type="submit" name="message" value="{{ user.id }}" style="background:none; border:none; color:#1976d2; cursor:pointer;">

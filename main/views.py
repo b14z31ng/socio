@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from .models import Profile, Post, CryptoUtils, Message
+from .models import Profile, Post, CryptoUtils, Message, FriendRequest
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.contrib.auth.hashers import check_password
@@ -136,4 +136,86 @@ def chatbox(request, user_id):
         'users': users,
         'search_query': search_query,
         'searched_users': searched_users,
+    })
+
+@login_required
+def friends_page(request):
+    user = request.user
+    # Friends: accepted requests where user is from_user or to_user
+    friends = User.objects.filter(
+        models.Q(sent_friend_requests__to_user=user, sent_friend_requests__status='accepted') |
+        models.Q(received_friend_requests__from_user=user, received_friend_requests__status='accepted')
+    ).distinct()
+    # Incoming requests
+    incoming = FriendRequest.objects.filter(to_user=user, status='pending')
+    # Outgoing requests
+    outgoing = FriendRequest.objects.filter(from_user=user, status='pending')
+    return render(request, 'main/friends.html', {
+        'friends': friends,
+        'incoming': incoming,
+        'outgoing': outgoing,
+    })
+
+@login_required
+def send_friend_request(request, user_id):
+    to_user = get_object_or_404(User, id=user_id)
+    if to_user != request.user and not FriendRequest.objects.filter(from_user=request.user, to_user=to_user).exists():
+        FriendRequest.objects.create(from_user=request.user, to_user=to_user)
+    return redirect('friends')
+
+@login_required
+def accept_friend_request(request, request_id):
+    fr = get_object_or_404(FriendRequest, id=request_id, to_user=request.user)
+    fr.status = 'accepted'
+    fr.save()
+    return redirect('friends')
+
+@login_required
+def decline_friend_request(request, request_id):
+    fr = get_object_or_404(FriendRequest, id=request_id, to_user=request.user)
+    fr.status = 'declined'
+    fr.save()
+    return redirect('friends')
+
+@login_required
+def cancel_friend_request(request, request_id):
+    fr = get_object_or_404(FriendRequest, id=request_id, from_user=request.user)
+    fr.delete()
+    return redirect('friends')
+
+@login_required
+def remove_friend(request, user_id):
+    user = request.user
+    other = get_object_or_404(User, id=user_id)
+    FriendRequest.objects.filter(
+        (models.Q(from_user=user, to_user=other) | models.Q(from_user=other, to_user=user)),
+        status='accepted'
+    ).delete()
+    return redirect('friends')
+
+@login_required
+def user_profile(request, user_id):
+    other = get_object_or_404(User, id=user_id)
+    profile = getattr(other, 'profile', None)
+    if not profile:
+        profile = None
+    user = request.user
+    is_friend = FriendRequest.objects.filter(
+        ((models.Q(from_user=user, to_user=other) | models.Q(from_user=other, to_user=user)),
+         models.Q(status='accepted'))
+    ).exists()
+    req_sent = FriendRequest.objects.filter(from_user=user, to_user=other, status='pending').exists()
+    req_received = FriendRequest.objects.filter(from_user=other, to_user=user, status='pending').exists()
+    can_add = not is_friend and not req_sent and not req_received and user != other
+    can_unfriend = is_friend
+    can_accept = req_received
+    return render(request, 'main/user_profile.html', {
+        'profile_user': other,
+        'profile': profile,
+        'is_friend': is_friend,
+        'can_add': can_add,
+        'can_unfriend': can_unfriend,
+        'can_accept': can_accept,
+        'req_sent': req_sent,
+        'req_received': req_received,
     })

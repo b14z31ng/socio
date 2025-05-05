@@ -26,7 +26,7 @@
                     {% endif %}
                 {% endwith %}
                 <div>
-                    <strong>{{ post.user.username }}</strong><br>
+                    <strong><a href="{% url 'user_profile' post.user.id %}">{{ post.user.username }}</a></strong><br>
                     <span style="color: #90a4ae; font-size: 0.95em;">{{ post.created_at|date:'M d, Y H:i' }}</span>
                 </div>
             </div>
