@@ -10,7 +10,12 @@
     {% for user in users %}
         <li style="margin-bottom: 12px;">
             <i class="fa-solid fa-user"></i> {{ user.username }}
-            <a href="/messages/send/?receiver={{ user.id }}" style="margin-left: 12px;"><i class="fa-solid fa-paper-plane"></i> Message</a>
+            <form method="post" action="" style="display:inline; margin-left:12px;">
+                {% csrf_token %}
+                <button type="submit" name="message" value="{{ user.id }}" style="background:none; border:none; color:#1976d2; cursor:pointer;">
+                    <i class="fa-solid fa-paper-plane"></i> Message
+                </button>
+            </form>
         </li>
     {% empty %}
         <li>No users found.</li>

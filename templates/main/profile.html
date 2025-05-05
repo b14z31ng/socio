@@ -22,7 +22,12 @@
     </form>
     <h2 style="margin-bottom:4px;">{{ profile.user.username }}
         {% if request.user != profile.user %}
-            <a href="/messages/send/?receiver={{ profile.user.id }}" title="Send Message" style="margin-left:10px;"><i class="fa-solid fa-paper-plane"></i></a>
+        <form method="post" action="" style="display:inline; margin-left:10px;">
+            {% csrf_token %}
+            <button type="submit" name="message" value="{{ profile.user.id }}" title="Send Message" style="background:none; border:none; color:#1976d2; cursor:pointer;">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
         {% endif %}
     </h2>
     <p style="color:#607d8b; margin-top:0;">Member since {{ profile.user.date_joined|date:'F Y' }}</p>

@@ -59,6 +59,9 @@ def profile_view(request):
             profile.save()
             messages.success(request, 'Profile picture updated!')
             return redirect('profile')
+        if 'message' in request.POST:
+            user_id = request.POST.get('message')
+            return redirect('chatbox', user_id=user_id)
     posts = Post.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'main/profile.html', {'profile': profile, 'posts': posts})
 
@@ -79,42 +82,30 @@ def post_content(request):
     return render(request, 'main/post.html', {'profile': profile, 'posts': page_obj})
 
 @login_required
-def inbox(request):
-    messages_received = Message.objects.filter(receiver=request.user).order_by('-timestamp')
-    messages_sent = Message.objects.filter(sender=request.user).order_by('-timestamp')
-    return render(request, 'main/inbox.html', {'messages_received': messages_received, 'messages_sent': messages_sent})
-
-@login_required
-def send_message(request):
-    User = get_user_model()
-    users = User.objects.exclude(id=request.user.id)
-    if request.method == 'POST':
-        receiver_id = request.POST.get('receiver')
-        content = request.POST.get('content', '')
-        if receiver_id and content:
-            receiver = User.objects.get(id=receiver_id)
-            msg = Message(sender=request.user, receiver=receiver, encrypted_content=content)
-            msg.save()
-            return redirect('inbox')
-    return render(request, 'main/send_message.html', {'users': users})
-
-@login_required
 def search_users(request):
     query = request.GET.get('q', '')
     users = []
     if query:
         users = User.objects.filter(username__icontains=query).exclude(id=request.user.id)
+    if request.method == 'POST':
+        if 'message' in request.POST:
+            user_id = request.POST.get('message')
+            return redirect('chatbox', user_id=user_id)
     return render(request, 'main/search_users.html', {'users': users, 'query': query})
 
 @login_required
 def conversations(request):
-    # Get all users the current user has messaged or received messages from
     user = request.user
     sent_to = Message.objects.filter(sender=user).values_list('receiver', flat=True)
     received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
     user_ids = set(list(sent_to) + list(received_from))
     users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
-    return render(request, 'main/conversations.html', {'users': users})
+    search_query = request.GET.get('search', '')
+    if search_query:
+        searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id)
+    else:
+        searched_users = []
+    return render(request, 'main/conversations.html', {'users': users, 'searched_users': searched_users, 'search_query': search_query})
 
 @login_required
 def chatbox(request, user_id):
