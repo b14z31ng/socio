@@ -20,7 +20,7 @@
         <input type="file" name="profile_pic" accept="image/*" style="margin-top:8px;">
         <button type="submit" style="margin-top:8px;">Update Profile Picture</button>
     </form>
-    <h2 style="margin-bottom:4px;">{{ profile.user.username }}
+    <h2 style="margin-bottom:4px;"><a href="{% url 'user_profile' profile.user.id %}" style="color:inherit; text-decoration:underline;">{{ profile.user.username }}</a>
         {% if request.user != profile.user %}
         <form method="post" action="" style="display:inline; margin-left:10px;">
             {% csrf_token %}
@@ -45,7 +45,7 @@
                     <span class="profile-icon" style="font-size: 32px; color: #1976d2; margin-right: 12px;">&#128100;</span>
                 {% endif %}
                 <div>
-                    <strong>{{ post.user.username }}</strong><br>
+                    <strong><a href="{% url 'user_profile' post.user.id %}" style="color:inherit; text-decoration:underline;">{{ post.user.username }}</a></strong><br>
                     <span style="color: #90a4ae; font-size: 0.95em;">{{ post.created_at|date:'M d, Y H:i' }}</span>
                 </div>
             </div>

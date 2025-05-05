@@ -1,7 +1,7 @@
 {% extends 'main/base.html' %}
-{% block title %}{{ profile_user.username }}'s Profile | My Secure Social{% endblock %}
+{% block title %}{{ other.username }}'s Profile | My Secure Social{% endblock %}
 {% block content %}
-<h2>{{ profile_user.username }}'s Profile</h2>
+<h2>{{ other.username }}'s Profile</h2>
 {% if profile and profile.get_profile_pic_url %}
     <img src="{{ profile.get_profile_pic_url }}" alt="Profile Picture" width="100" style="border-radius:50px;">
 {% endif %}
@@ -9,28 +9,31 @@
     <p>{{ profile.get_bio }}</p>
 {% endif %}
 
-{% if request.user != profile_user %}
-    {% if can_add %}
-        <form action="{% url 'send_friend_request' profile_user.id %}" method="post">{% csrf_token %}
-            <button type="submit">Add Friend</button>
-        </form>
-    {% elif can_unfriend %}
-        <form action="{% url 'remove_friend' profile_user.id %}" method="post">{% csrf_token %}
-            <button type="submit">Friend (Click to Unfriend)</button>
-        </form>
-    {% elif can_accept %}
-        <form action="{% url 'accept_friend_request' req_id=profile_user.sent_friend_requests.get(to_user=request.user, status='pending').id %}" method="post">{% csrf_token %}
-            <button type="submit">Accept Friend Request</button>
-        </form>
-    {% elif req_sent %}
-        <span>Friend Request Sent</span>
-    {% elif req_received %}
-        <span>Friend Request Received</span>
-    {% endif %}
-    <form action="{% url 'chatbox' profile_user.id %}" method="get" style="display:inline;">
-        <button type="submit">Message</button>
-    </form>
-{% else %}
+{% if is_self %}
     <span>This is your profile.</span>
+{% else %}
+    <form method="post">{% csrf_token %}
+        {% if relationship == 'not_friends' %}
+            <button type="submit" name="send_request">Send Friend Request</button>
+        {% elif relationship == 'outgoing_pending' %}
+            <button type="submit" name="cancel_request">Cancel Request</button>
+        {% elif relationship == 'incoming_pending' %}
+            <button type="submit" name="accept_request">Accept</button>
+            <button type="submit" name="decline_request">Decline</button>
+        {% elif relationship == 'friends' %}
+            <button type="submit" name="unfriend">Unfriend</button>
+        {% endif %}
+        <button type="submit" name="message">Message</button>
+    </form>
 {% endif %}
+
+<h3>Posts</h3>
+{% for post in posts %}
+    <div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
+        <p>{{ post.content }}</p>
+        <small>{{ post.created_at }}</small>
+    </div>
+{% empty %}
+    <p>No posts yet.</p>
+{% endfor %}
 {% endblock %}

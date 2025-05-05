@@ -1,10 +1,10 @@
 <h1>Profile</h1>
-<p>Welcome, {{ request.user.username }}</p>
+<p>Welcome, <a href="{% url 'user_profile' request.user.id %}">{{ request.user.username }}</a></p>
 <p>Bio: {{ profile.get_bio }}</p>
 <h2>Your Posts</h2>
 <ul>
     {% for post in posts %}
-    <li>{{ post.get_content }} ({{ post.created_at }})</li>
+    <li><a href="{% url 'user_profile' request.user.id %}">{{ request.user.username }}</a>: {{ post.get_content }} ({{ post.created_at }})</li>
     {% endfor %}
 </ul>
 <a href="/post/">Create a new post</a>
