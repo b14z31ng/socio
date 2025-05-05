@@ -111,12 +111,15 @@ def conversations(request):
 def chatbox(request, user_id):
     other_user = User.objects.get(id=user_id)
     user = request.user
-    # Get all users the current user has messaged or received messages from
     sent_to = Message.objects.filter(sender=user).values_list('receiver', flat=True)
     received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
     user_ids = set(list(sent_to) + list(received_from))
     users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
-    # Get all messages between the two users
+    search_query = request.GET.get('search', '')
+    if search_query:
+        searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id)
+    else:
+        searched_users = []
     messages = Message.objects.filter(
         (models.Q(sender=user) & models.Q(receiver=other_user)) |
         (models.Q(sender=other_user) & models.Q(receiver=user))
@@ -127,4 +130,10 @@ def chatbox(request, user_id):
             msg = Message(sender=user, receiver=other_user, encrypted_content=content)
             msg.save()
             return redirect('chatbox', user_id=other_user.id)
-    return render(request, 'main/chatbox.html', {'other_user': other_user, 'messages': messages, 'users': users})
+    return render(request, 'main/chatbox.html', {
+        'other_user': other_user,
+        'messages': messages,
+        'users': users,
+        'search_query': search_query,
+        'searched_users': searched_users,
+    })
