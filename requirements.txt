@@ -7,3 +7,4 @@ pillow==11.2.1
 pycparser==2.22
 sqlparse==0.5.3
 tzdata==2025.2
+psycopg2-binary
