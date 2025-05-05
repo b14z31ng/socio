@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
+from django.db import models
 
 # Credential check function
 def check_credentials(username, password):
@@ -104,3 +105,35 @@ def search_users(request):
     if query:
         users = User.objects.filter(username__icontains=query).exclude(id=request.user.id)
     return render(request, 'main/search_users.html', {'users': users, 'query': query})
+
+@login_required
+def conversations(request):
+    # Get all users the current user has messaged or received messages from
+    user = request.user
+    sent_to = Message.objects.filter(sender=user).values_list('receiver', flat=True)
+    received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
+    user_ids = set(list(sent_to) + list(received_from))
+    users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
+    return render(request, 'main/conversations.html', {'users': users})
+
+@login_required
+def chatbox(request, user_id):
+    other_user = User.objects.get(id=user_id)
+    user = request.user
+    # Get all users the current user has messaged or received messages from
+    sent_to = Message.objects.filter(sender=user).values_list('receiver', flat=True)
+    received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
+    user_ids = set(list(sent_to) + list(received_from))
+    users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
+    # Get all messages between the two users
+    messages = Message.objects.filter(
+        (models.Q(sender=user) & models.Q(receiver=other_user)) |
+        (models.Q(sender=other_user) & models.Q(receiver=user))
+    ).order_by('timestamp')
+    if request.method == 'POST':
+        content = request.POST.get('content', '')
+        if content:
+            msg = Message(sender=user, receiver=other_user, encrypted_content=content)
+            msg.save()
+            return redirect('chatbox', user_id=other_user.id)
+    return render(request, 'main/chatbox.html', {'other_user': other_user, 'messages': messages, 'users': users})

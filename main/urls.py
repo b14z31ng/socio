@@ -11,4 +11,6 @@ urlpatterns = [
     path('messages/', views.inbox, name='inbox'),
     path('messages/send/', views.send_message, name='send_message'),
     path('users/search/', views.search_users, name='search_users'),
+    path('conversations/', views.conversations, name='conversations'),
+    path('chat/<int:user_id>/', views.chatbox, name='chatbox'),
 ]
