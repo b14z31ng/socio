@@ -30,5 +30,4 @@ media/
 Thumbs.db
 
 # Secret settings (if any)
-# website/settings.py is no longer ignored so it can be tracked for deployment
 website/secrete.py
