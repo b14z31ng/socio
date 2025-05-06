@@ -156,6 +156,12 @@ AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_S3_ADDRESSING_STYLE = "virtual"
 AWS_DEFAULT_ACL = None
 
+print("DEFAULT_FILE_STORAGE:", DEFAULT_FILE_STORAGE)
+print("AWS_STORAGE_BUCKET_NAME:", AWS_STORAGE_BUCKET_NAME)
+print("AWS_S3_ENDPOINT_URL:", AWS_S3_ENDPOINT_URL)
+print("AWS_ACCESS_KEY_ID:", AWS_ACCESS_KEY_ID)
+print("AWS_SECRET_ACCESS_KEY:", AWS_SECRET_ACCESS_KEY)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
