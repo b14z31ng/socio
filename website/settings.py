@@ -15,10 +15,10 @@ import os
 import dj_database_url
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=os.path.join(BASE_DIR, 'website', '.env'))
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 
 # Quick-start development settings - unsuitable for production
@@ -142,13 +142,15 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 if not DEBUG:
-    # Use Cloudinary only in production
+    print('Using Cloudinary for media storage')
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME', ''),
         'API_KEY': os.getenv('CLOUDINARY_API_KEY', ''),
         'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', ''),
     }
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    print('Using local storage for media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
