@@ -3,11 +3,20 @@
 {% block content %}
 <div style="display: flex; max-width: 900px; margin: 0 auto; min-height: 500px;">
     <div style="width: 260px; background: #f5f7fa; border-radius: 10px 0 0 10px; box-shadow: 0 2px 8px rgba(25,118,210,0.06); padding: 18px 0;">
-        <h3 style="text-align:center; color:#1976d2;">Chats</h3>
+        <h3 style="text-align:center; color:#1976d2;">Chats & Groups</h3>
         <form method="get" action="" style="padding: 0 18px 12px 18px;">
-            <input type="text" name="search" value="{{ search_query }}" placeholder="Search users..." style="width: 100%; padding: 7px; border-radius: 6px; border: 1px solid #cfd8dc;">
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search..." style="width: 100%; padding: 7px; border-radius: 6px; border: 1px solid #cfd8dc;">
         </form>
-        <ul style="list-style:none; padding:0; margin:0;">
+        <div style="padding: 0 18px 12px 18px;">
+            <a href="{% url 'create_group' %}" style="display:block; background:#1976d2; color:#fff; text-align:center; border-radius:6px; padding:8px 0; text-decoration:none; font-weight:500; margin-bottom:10px;">
+                <i class="fa-solid fa-users"></i> Create Group
+            </a>
+        </div>
+        <div style="border-bottom:1px solid #e3f2fd; margin-bottom:10px;"></div>
+        <div style="padding:0 18px 0 18px;">
+            <div style="color:#1976d2; font-weight:500; margin-bottom:4px;">Chats</div>
+        </div>
+        <ul style="list-style:none; padding:0 0 0 0; margin:0 0 10px 0;">
             {% for u in users %}
             <li style="margin-bottom: 8px;">
                 <a href="/chat/{{ u.id }}/" style="display:flex; align-items:center; padding:10px 18px; color:#263238; text-decoration:none; border-radius:6px; transition:background 0.2s;">
@@ -17,13 +26,30 @@
                         <span class="profile-icon" style="font-size: 28px; color: #1976d2; margin-right: 10px;">&#128100;</span>
                     {% endif %}
                     <span>{{ u.username }}</span>
+                    <span style="background:#e3f2fd; color:#1976d2; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Chat</span>
                 </a>
             </li>
             {% empty %}
             <li style="text-align:center; color:#b0bec5;">No conversations yet.</li>
             {% endfor %}
         </ul>
-        {% if searched_users %}
+        <div style="padding:0 18px 0 18px;">
+            <div style="color:#1976d2; font-weight:500; margin-bottom:4px;">Groups</div>
+        </div>
+        <ul style="list-style:none; padding:0 0 0 0; margin:0;">
+            {% for g in groups %}
+            <li style="margin-bottom: 8px;">
+                <a href="{% url 'group_chat' g.id %}" style="display:flex; align-items:center; padding:10px 18px; color:#263238; text-decoration:none; border-radius:6px; transition:background 0.2s;">
+                    <span class="profile-icon" style="font-size: 28px; color: #1976d2; margin-right: 10px;"><i class="fa-solid fa-users"></i></span>
+                    <span>{{ g.name }}</span>
+                    <span style="background:#fff3e0; color:#ff9800; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Group</span>
+                </a>
+            </li>
+            {% empty %}
+            <li style="text-align:center; color:#b0bec5;">No groups yet.</li>
+            {% endfor %}
+        </ul>
+        {% if searched_users or searched_groups %}
         <div style="border-top:1px solid #e3f2fd; margin:12px 0 0 0; padding:12px 18px 0 18px;">
             <div style="color:#1976d2; font-weight:500; margin-bottom:6px;">Search Results</div>
             <ul style="list-style:none; padding:0; margin:0;">
@@ -36,6 +62,16 @@
                             <span class="profile-icon" style="font-size: 22px; color: #1976d2; margin-right: 10px;">&#128100;</span>
                         {% endif %}
                         <span>{{ u.username }}</span>
+                        <span style="background:#e3f2fd; color:#1976d2; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Chat</span>
+                    </a>
+                </li>
+                {% endfor %}
+                {% for g in searched_groups %}
+                <li style="margin-bottom: 8px;">
+                    <a href="{% url 'group_chat' g.id %}" style="display:flex; align-items:center; padding:8px 0; color:#263238; text-decoration:none; border-radius:6px;">
+                        <span class="profile-icon" style="font-size: 22px; color: #1976d2; margin-right: 10px;"><i class="fa-solid fa-users"></i></span>
+                        <span>{{ g.name }}</span>
+                        <span style="background:#fff3e0; color:#ff9800; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Group</span>
                     </a>
                 </li>
                 {% endfor %}
@@ -44,7 +80,7 @@
         {% endif %}
     </div>
     <div style="flex:1; background:#fff; border-radius:0 10px 10px 0; box-shadow: 0 2px 8px rgba(25,118,210,0.06); display:flex; align-items:center; justify-content:center; color:#b0bec5; font-size:1.2em;">
-        <span>Select a chat to start messaging</span>
+        <span>Select a chat or group to start messaging</span>
     </div>
 </div>
 {% endblock %}

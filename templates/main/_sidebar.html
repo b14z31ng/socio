@@ -1,0 +1,80 @@
+{# Sidebar for chats and groups #}
+<div class="chat-sidebar" style="width: 260px; background: #f5f7fa; border-radius: 10px 0 0 10px; box-shadow: 0 2px 8px rgba(25,118,210,0.06); padding: 18px 0;">
+    <h3 class="chat-title" style="text-align:center; color:#1976d2;">Chats & Groups</h3>
+    <form method="get" action="" style="padding: 0 18px 12px 18px;">
+        <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Search..." style="width: 100%; padding: 7px; border-radius: 6px; border: 1px solid #cfd8dc;">
+    </form>
+    <div style="padding: 0 18px 12px 18px;">
+        <a href="{% url 'create_group' %}" style="display:block; background:#1976d2; color:#fff; text-align:center; border-radius:6px; padding:8px 0; text-decoration:none; font-weight:500; margin-bottom:10px;">
+            <i class="fa-solid fa-users"></i> Create Group
+        </a>
+    </div>
+    <div style="border-bottom:1px solid #e3f2fd; margin-bottom:10px;"></div>
+    <div style="padding:0 18px 0 18px;">
+        <div style="color:#1976d2; font-weight:500; margin-bottom:4px;">Chats</div>
+    </div>
+    <ul style="list-style:none; padding:0 0 0 0; margin:0 0 10px 0;">
+        {% for u in users %}
+        <li style="margin-bottom: 8px; display:flex; align-items:center;">
+            <a href="/chat/{{ u.id }}/" style="display:flex; align-items:center; flex:1; padding:10px 0 10px 18px; color:#263238; text-decoration:none; border-radius:6px; transition:background 0.2s;{% if active_user and u.id == active_user.id %} background:#e3f2fd;{% endif %}">
+                {% if u.profile.get_profile_pic_url %}
+                    <img src="{{ u.profile.get_profile_pic_url }}" style="width:32px; height:32px; object-fit:cover; border-radius:50%; margin-right:10px;" />
+                {% else %}
+                    <span class="profile-icon" style="font-size: 28px; color: #1976d2; margin-right: 10px;">&#128100;</span>
+                {% endif %}
+                <span>{{ u.username }}</span>
+                <span style="background:#e3f2fd; color:#1976d2; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Chat</span>
+            </a>
+            <a href="/call/{{ u.id }}/" title="Call {{ u.username }}" style="margin-left:8px; color:#1976d2; font-size:1.2em;"><i class="fa-solid fa-phone"></i></a>
+        </li>
+        {% empty %}
+        <li style="text-align:center; color:#b0bec5;">No conversations yet.</li>
+        {% endfor %}
+    </ul>
+    <div style="padding:0 18px 0 18px;">
+        <div style="color:#1976d2; font-weight:500; margin-bottom:4px;">Groups</div>
+    </div>
+    <ul style="list-style:none; padding:0 0 0 0; margin:0;">
+        {% for g in groups %}
+        <li style="margin-bottom: 8px;">
+            <a href="{% url 'group_chat' g.id %}" style="display:flex; align-items:center; padding:10px 18px; color:#263238; text-decoration:none; border-radius:6px; transition:background 0.2s;{% if active_group and g.id == active_group.id %} background:#e3f2fd;{% endif %}">
+                <span class="profile-icon" style="font-size: 28px; color: #1976d2; margin-right: 10px;"><i class="fa-solid fa-users"></i></span>
+                <span>{{ g.name }}</span>
+                <span style="background:#fff3e0; color:#ff9800; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Group</span>
+            </a>
+        </li>
+        {% empty %}
+        <li style="text-align:center; color:#b0bec5;">No groups yet.</li>
+        {% endfor %}
+    </ul>
+    {% if searched_users or searched_groups %}
+    <div style="border-top:1px solid #e3f2fd; margin:12px 0 0 0; padding:12px 18px 0 18px;">
+        <div style="color:#1976d2; font-weight:500; margin-bottom:6px;">Search Results</div>
+        <ul style="list-style:none; padding:0; margin:0;">
+            {% for u in searched_users %}
+            <li style="margin-bottom: 8px; display:flex; align-items:center;">
+                <a href="/chat/{{ u.id }}/" style="display:flex; align-items:center; flex:1; padding:8px 0; color:#263238; text-decoration:none; border-radius:6px;">
+                    {% if u.profile.get_profile_pic_url %}
+                        <img src="{{ u.profile.get_profile_pic_url }}" style="width:28px; height:28px; object-fit:cover; border-radius:50%; margin-right:10px;" />
+                    {% else %}
+                        <span class="profile-icon" style="font-size: 22px; color: #1976d2; margin-right: 10px;">&#128100;</span>
+                    {% endif %}
+                    <span>{{ u.username }}</span>
+                    <span style="background:#e3f2fd; color:#1976d2; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Chat</span>
+                </a>
+                <a href="/call/{{ u.id }}/" title="Call {{ u.username }}" style="margin-left:8px; color:#1976d2; font-size:1.1em;"><i class="fa-solid fa-phone"></i></a>
+            </li>
+            {% endfor %}
+            {% for g in searched_groups %}
+            <li style="margin-bottom: 8px;">
+                <a href="{% url 'group_chat' g.id %}" style="display:flex; align-items:center; padding:8px 0; color:#263238; text-decoration:none; border-radius:6px;">
+                    <span class="profile-icon" style="font-size: 22px; color: #1976d2; margin-right: 10px;"><i class="fa-solid fa-users"></i></span>
+                    <span>{{ g.name }}</span>
+                    <span style="background:#fff3e0; color:#ff9800; font-size:0.85em; border-radius:8px; padding:2px 8px; margin-left:auto;">Group</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>

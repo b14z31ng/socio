@@ -1,39 +1,78 @@
 {% extends 'main/base.html' %}
-{% block title %}{{ other.username }}'s Profile | My Secure Social{% endblock %}
+{% block title %}{{ other_user.username }}'s Profile | My Secure Social{% endblock %}
 {% block content %}
-<h2>{{ other.username }}'s Profile</h2>
-{% if profile and profile.get_profile_pic_url %}
-    <img src="{{ profile.get_profile_pic_url }}" alt="Profile Picture" width="100" style="border-radius:50px;">
-{% endif %}
-{% if profile and profile.get_bio %}
-    <p>{{ profile.get_bio }}</p>
-{% endif %}
-
-{% if is_self %}
-    <span>This is your profile.</span>
-{% else %}
-    <form method="post">{% csrf_token %}
-        {% if relationship == 'not_friends' %}
-            <button type="submit" name="send_request">Send Friend Request</button>
-        {% elif relationship == 'outgoing_pending' %}
-            <button type="submit" name="cancel_request">Cancel Request</button>
-        {% elif relationship == 'incoming_pending' %}
-            <button type="submit" name="accept_request">Accept</button>
-            <button type="submit" name="decline_request">Decline</button>
-        {% elif relationship == 'friends' %}
-            <button type="submit" name="unfriend">Unfriend</button>
+<div style="max-width: 480px; margin: 0 auto;">
+    <div style="background: linear-gradient(90deg, #e3f2fd 0%, #fff 100%); border-radius: 16px; box-shadow: 0 2px 12px rgba(25, 118, 210, 0.10); padding: 32px 24px 24px 24px; text-align: center; margin-bottom: 32px;">
+        {% if profile and profile.profile_pic %}
+            <img src="{{ profile.profile_pic.url }}" alt="Profile Picture" style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #1976d2; margin-bottom: 16px;">
+        {% else %}
+            <i class="fa-solid fa-user-circle" style="font-size: 120px; color: #90caf9; margin-bottom: 16px;"></i>
         {% endif %}
-        <button type="submit" name="message">Message</button>
-    </form>
-{% endif %}
-
-<h3>Posts</h3>
-{% for post in posts %}
-    <div style="border:1px solid #ccc; margin-bottom:10px; padding:10px;">
-        <p>{{ post.content }}</p>
-        <small>{{ post.created_at }}</small>
+        <h2 style="margin-bottom: 8px; color: #1976d2;">{{ other_user.username }}</h2>
+        <div id="friend-action-area" style="margin-bottom: 18px;">
+            {% include 'main/_friend_action.html' %}
+        </div>
     </div>
-{% empty %}
-    <p>No posts yet.</p>
-{% endfor %}
+    <div style="background: #fff; border-radius: 12px; box-shadow: 0 1px 6px rgba(25, 118, 210, 0.07); padding: 24px;">
+        <h3 style="color: #1976d2; margin-top: 0;">Posts</h3>
+        <ul style="list-style: none; padding: 0;">
+            {% for post in posts %}
+                <li style="background: #f5faff; border-radius: 8px; margin-bottom: 18px; padding: 16px; box-shadow: 0 1px 4px rgba(25, 118, 210, 0.04);">
+                    <div style="margin-bottom: 8px; color: #333;">{{ post.encrypted_content }}</div>
+                    {% if post.media %}
+                        <img src="{{ post.media.url }}" style="max-width: 100%; border-radius: 8px; margin-top: 8px;">
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li style="color: #888;">No posts yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<script>
+function updateFriendActionArea(html) {
+    document.getElementById('friend-action-area').innerHTML = html;
+}
+
+function friendAction(url, method = 'POST') {
+    fetch(url, {
+        method: method,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        // After action, reload the friend action area via AJAX
+        fetch(window.location.pathname + '?friend_action_partial=1', {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(r => r.text())
+        .then(html => updateFriendActionArea(html));
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.matches('.js-friend-action')) {
+        e.preventDefault();
+        friendAction(e.target.getAttribute('data-url'));
+    }
+});
+</script>
 {% endblock %}

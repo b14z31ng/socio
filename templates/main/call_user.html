@@ -1,0 +1,10 @@
+{% extends 'main/base.html' %}
+{% block title %}Calling {{ other_user.username }} | My Secure Social{% endblock %}
+{% block content %}
+<div style="text-align:center; margin-top:60px;">
+    <i class="fa-solid fa-phone fa-shake" style="font-size:4em; color:#1976d2;"></i>
+    <h2 style="margin-top:24px;">Calling <span style="color:#1976d2;">{{ other_user.username }}</span>...</h2>
+    <p style="color:#888; margin-top:18px;">(This is a placeholder. Real-time audio/video calling can be added with WebRTC.)</p>
+    <a href="/chat/{{ other_user.id }}/" style="display:inline-block; margin-top:32px; color:#fff; background:#e53935; padding:12px 32px; border-radius:8px; text-decoration:none; font-weight:500;">End Call</a>
+</div>
+{% endblock %}

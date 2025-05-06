@@ -18,4 +18,8 @@ urlpatterns = [
     path('friends/decline/<int:request_id>/', views.decline_friend_request, name='decline_friend_request'),
     path('friends/cancel/<int:request_id>/', views.cancel_friend_request, name='cancel_friend_request'),
     path('friends/remove/<int:user_id>/', views.remove_friend, name='remove_friend'),
+    path('groups/', views.group_list, name='group_list'),
+    path('groups/create/', views.create_group, name='create_group'),
+    path('groups/<int:group_id>/', views.group_chat, name='group_chat'),
+    path('call/<int:user_id>/', views.call_user, name='call_user'),
 ]

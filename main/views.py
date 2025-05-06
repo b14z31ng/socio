@@ -4,12 +4,13 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from .models import Profile, Post, CryptoUtils, Message, FriendRequest
-from django.http import HttpResponse
+from .models import Profile, Post, CryptoUtils, Message, FriendRequest, Group, GroupMessage
+from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.urls import reverse
 
 # Credential check function
 def check_credentials(username, password):
@@ -100,12 +101,21 @@ def conversations(request):
     received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
     user_ids = set(list(sent_to) + list(received_from))
     users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
+    groups = user.chat_groups.all()
     search_query = request.GET.get('search', '')
     if search_query:
         searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id)
+        searched_groups = Group.objects.filter(name__icontains=search_query, members=user)
     else:
         searched_users = []
-    return render(request, 'main/conversations.html', {'users': users, 'searched_users': searched_users, 'search_query': search_query})
+        searched_groups = []
+    return render(request, 'main/conversations.html', {
+        'users': users,
+        'groups': groups,
+        'searched_users': searched_users,
+        'searched_groups': searched_groups,
+        'search_query': search_query
+    })
 
 @login_required
 def chatbox(request, user_id):
@@ -115,27 +125,33 @@ def chatbox(request, user_id):
     received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
     user_ids = set(list(sent_to) + list(received_from))
     users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
+    groups = user.chat_groups.all()
     search_query = request.GET.get('search', '')
     if search_query:
         searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id)
+        searched_groups = Group.objects.filter(name__icontains=search_query, members=user)
     else:
         searched_users = []
+        searched_groups = []
     messages = Message.objects.filter(
         (models.Q(sender=user) & models.Q(receiver=other_user)) |
         (models.Q(sender=other_user) & models.Q(receiver=user))
     ).order_by('timestamp')
     if request.method == 'POST':
         content = request.POST.get('content', '')
-        if content:
-            msg = Message(sender=user, receiver=other_user, encrypted_content=content)
+        media = request.FILES.get('media')
+        if content or media:
+            msg = Message(sender=user, receiver=other_user, encrypted_content=content, media=media)
             msg.save()
             return redirect('chatbox', user_id=other_user.id)
     return render(request, 'main/chatbox.html', {
         'other_user': other_user,
         'messages': messages,
         'users': users,
+        'groups': groups,
         'search_query': search_query,
         'searched_users': searched_users,
+        'searched_groups': searched_groups,
     })
 
 @login_required
@@ -159,29 +175,43 @@ def friends_page(request):
 @login_required
 def send_friend_request(request, user_id):
     to_user = get_object_or_404(User, id=user_id)
+    created = False
     if to_user != request.user and not FriendRequest.objects.filter(from_user=request.user, to_user=to_user).exists():
         FriendRequest.objects.create(from_user=request.user, to_user=to_user)
-    return redirect('friends')
+        created = True
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'created': created})
+    return redirect(request.META.get('HTTP_REFERER', 'friends'))
 
 @login_required
 def accept_friend_request(request, request_id):
     fr = get_object_or_404(FriendRequest, id=request_id, to_user=request.user)
     fr.status = 'accepted'
     fr.save()
-    return redirect('friends')
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'action': 'accepted'})
+    return redirect(request.META.get('HTTP_REFERER', 'friends'))
 
 @login_required
 def decline_friend_request(request, request_id):
     fr = get_object_or_404(FriendRequest, id=request_id, to_user=request.user)
     fr.status = 'declined'
     fr.save()
-    return redirect('friends')
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'action': 'declined'})
+    return redirect(request.META.get('HTTP_REFERER', 'friends'))
 
 @login_required
 def cancel_friend_request(request, request_id):
-    fr = get_object_or_404(FriendRequest, id=request_id, from_user=request.user)
-    fr.delete()
-    return redirect('friends')
+    try:
+        fr = FriendRequest.objects.get(id=request_id, from_user=request.user)
+        fr.delete()
+        result = 'deleted'
+    except FriendRequest.DoesNotExist:
+        result = 'not_found'
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'action': result})
+    return redirect(request.META.get('HTTP_REFERER', 'friends'))
 
 @login_required
 def remove_friend(request, user_id):
@@ -195,4 +225,96 @@ def remove_friend(request, user_id):
 
 @login_required
 def user_profile(request, user_id):
+    if request.user.id == user_id:
+        return redirect('profile')
     other = get_object_or_404(User, id=user_id)
+    profile = Profile.objects.filter(user=other).first()
+    user = request.user
+    # Check friend status
+    is_friend = FriendRequest.objects.filter(
+        ((models.Q(from_user=user, to_user=other) | models.Q(from_user=other, to_user=user)) &
+         models.Q(status='accepted'))
+    ).exists()
+    outgoing_request = FriendRequest.objects.filter(from_user=user, to_user=other, status='pending').first()
+    incoming_request = FriendRequest.objects.filter(from_user=other, to_user=user, status='pending').first()
+    friend_status = None
+    if is_friend:
+        friend_status = 'friends'
+    elif outgoing_request:
+        friend_status = 'outgoing'
+    elif incoming_request:
+        friend_status = 'incoming'
+    else:
+        friend_status = 'none'
+    posts = Post.objects.filter(user=other).order_by('-created_at')
+    context = {
+        'other_user': other,
+        'profile': profile,
+        'friend_status': friend_status,
+        'outgoing_request': outgoing_request,
+        'incoming_request': incoming_request,
+        'posts': posts,
+    }
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.GET.get('friend_action_partial') == '1':
+        return render(request, 'main/_friend_action.html', context)
+    return render(request, 'main/user_profile.html', context)
+
+@login_required
+def create_group(request):
+    users = User.objects.exclude(id=request.user.id)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        member_ids = request.POST.getlist('members')
+        if name and member_ids:
+            group = Group.objects.create(name=name, created_by=request.user)
+            group.members.add(request.user)
+            for uid in member_ids:
+                user = User.objects.get(id=uid)
+                group.members.add(user)
+            return redirect('group_chat', group_id=group.id)
+    return render(request, 'main/create_group.html', {'users': users})
+
+@login_required
+def group_list(request):
+    groups = request.user.chat_groups.all()
+    return render(request, 'main/group_list.html', {'groups': groups})
+
+@login_required
+def group_chat(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+    if request.user not in group.members.all():
+        return HttpResponse('You are not a member of this group.', status=403)
+    user = request.user
+    sent_to = Message.objects.filter(sender=user).values_list('receiver', flat=True)
+    received_from = Message.objects.filter(receiver=user).values_list('sender', flat=True)
+    user_ids = set(list(sent_to) + list(received_from))
+    users = User.objects.filter(id__in=user_ids).exclude(id=user.id)
+    groups = user.chat_groups.all()
+    search_query = request.GET.get('search', '')
+    if search_query:
+        searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id)
+        searched_groups = Group.objects.filter(name__icontains=search_query, members=user)
+    else:
+        searched_users = []
+        searched_groups = []
+    if request.method == 'POST':
+        content = request.POST.get('content', '')
+        media = request.FILES.get('media')
+        if content or media:
+            GroupMessage.objects.create(group=group, sender=request.user, encrypted_content=content, media=media)
+            return redirect(reverse('group_chat', args=[group.id]))
+    messages = group.messages.select_related('sender').order_by('timestamp')
+    return render(request, 'main/group_chat.html', {
+        'group': group,
+        'messages': messages,
+        'users': users,
+        'groups': groups,
+        'search_query': search_query,
+        'searched_users': searched_users,
+        'searched_groups': searched_groups,
+    })
+
+@login_required
+def call_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    return render(request, 'main/call_user.html', {'other_user': user})

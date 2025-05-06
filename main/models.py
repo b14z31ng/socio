@@ -96,6 +96,7 @@ class Message(models.Model):
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     encrypted_content = models.TextField(default="", blank=True)
     content_mac = models.CharField(max_length=64, default="", blank=True)
+    media = models.FileField(upload_to='messages/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'])])
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -119,3 +120,30 @@ class FriendRequest(models.Model):
 
     def __str__(self):
         return f"{self.from_user} -> {self.to_user} ({self.status})"
+
+class Group(models.Model):
+    name = models.CharField(max_length=100)
+    members = models.ManyToManyField(User, related_name='chat_groups')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_groups')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class GroupMessage(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    encrypted_content = models.TextField(default="", blank=True)
+    content_mac = models.CharField(max_length=64, default="", blank=True)
+    media = models.FileField(upload_to='group_messages/', blank=True, null=True, validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'])])
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        self.encrypted_content = CryptoUtils.encrypt(self.encrypted_content)
+        self.content_mac = CryptoUtils.hmac(self.encrypted_content)
+        super().save(*args, **kwargs)
+
+    def get_content(self):
+        if self.content_mac == CryptoUtils.hmac(self.encrypted_content):
+            return CryptoUtils.decrypt(self.encrypted_content)
+        return '[INTEGRITY CHECK FAILED]'

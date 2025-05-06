@@ -45,6 +45,8 @@ INSTALLED_APPS = [
 # Add the 'main' app to the installed apps
 INSTALLED_APPS += [
     'main',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -135,6 +137,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Media files (Images, Videos, etc.)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cloudinary media storage
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'djt0wyab8',
+    'API_KEY': '712742998398354',
+    'API_SECRET': 'goLS1E-_gc_ijQCKkROowFTSyMo',
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

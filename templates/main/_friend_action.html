@@ -1,0 +1,10 @@
+{% if friend_status == 'friends' %}
+    <button disabled style="background: #43a047;">Friends</button>
+{% elif friend_status == 'outgoing' %}
+    <button class="js-friend-action" data-url="{% url 'cancel_friend_request' outgoing_request.id %}" style="background: #ffb300;">Cancel Friend Request</button>
+{% elif friend_status == 'incoming' %}
+    <button class="js-friend-action" data-url="{% url 'accept_friend_request' incoming_request.id %}" style="background: #43a047;">Accept Friend Request</button>
+    <button class="js-friend-action" data-url="{% url 'decline_friend_request' incoming_request.id %}" style="background: #e53935; margin-left: 8px;">Reject</button>
+{% else %}
+    <button class="js-friend-action" data-url="{% url 'send_friend_request' other_user.id %}">Send Friend Request</button>
+{% endif %}

@@ -1,46 +1,47 @@
 {% extends 'main/base.html' %}
-{% block title %}Chat with {{ other_user.username }} | My Secure Social{% endblock %}
+{% block title %}{{ group.name }} | Group Chat{% endblock %}
 {% block content %}
 <div class="chat-container" style="display: flex; max-width: 900px; margin: 0 auto; min-height: 500px;">
-    {% include 'main/_sidebar.html' with users=users groups=groups search_query=search_query searched_users=searched_users searched_groups=searched_groups active_user=other_user %}
+    {% include 'main/_sidebar.html' with users=users groups=groups search_query=search_query searched_users=searched_users searched_groups=searched_groups active_group=group %}
     <div class="chat-content" style="flex:1; background:#fff; border-radius:0 10px 10px 0; box-shadow: 0 2px 8px rgba(25,118,210,0.06); display:flex; flex-direction:column;">
         <div class="chat-header" style="padding: 18px 24px; border-bottom: 1px solid #e3f2fd; display:flex; align-items:center;">
-            {% if other_user.profile.get_profile_pic_url %}
-                <img src="{{ other_user.profile.get_profile_pic_url }}" class="profile-picture" style="width:36px; height:36px; object-fit:cover; border-radius:50%; margin-right:12px;" />
-            {% else %}
-                <span class="profile-icon" style="font-size: 32px; color: #1976d2; margin-right: 12px;">&#128100;</span>
-            {% endif %}
-            <span class="username" style="font-size:1.2em; color:#1976d2; font-weight:500;"><a href="{% url 'user_profile' other_user.id %}" style="color:inherit; text-decoration:underline;">{{ other_user.username }}</a></span>
+            <span class="profile-icon" style="font-size: 32px; color: #1976d2; margin-right: 12px;"><i class="fa-solid fa-users"></i></span>
+            <span class="username" style="font-size:1.2em; color:#1976d2; font-weight:500;">{{ group.name }}</span>
+            <span style="margin-left:16px; color:#888; font-size:0.95em;">Members:
+                {% for member in group.members.all %}
+                    {{ member.username }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </span>
         </div>
         <div class="chat-messages" style="flex:1; overflow-y:auto; padding: 24px; display:flex; flex-direction:column;">
-            {% for msg in messages %}
-                {% if msg.sender == request.user %}
+            {% for message in messages %}
+                {% if message.sender == request.user %}
                     <div class="message own-message" style="align-self: flex-end; background: #1976d2; color: #fff; padding: 10px 18px; border-radius: 16px 16px 2px 16px; margin-bottom: 10px; max-width: 60%;">
-                        {{ msg.get_content }}
-                        {% if msg.media %}
-                            {% if msg.media.url|lower|slice:'-4:' == '.mp4' %}
+                        {{ message.get_content }}
+                        {% if message.media %}
+                            {% if message.media.url|lower|slice:'-4:' == '.mp4' %}
                                 <video controls style="max-width:100%; border-radius:8px; margin-top:8px;">
-                                    <source src="{{ msg.media.url }}" type="video/mp4">
+                                    <source src="{{ message.media.url }}" type="video/mp4">
                                 </video>
                             {% else %}
-                                <img src="{{ msg.media.url }}" style="max-width:100%; border-radius:8px; margin-top:8px;" />
+                                <img src="{{ message.media.url }}" style="max-width:100%; border-radius:8px; margin-top:8px;" />
                             {% endif %}
                         {% endif %}
-                        <div class="timestamp" style="font-size:0.8em; color:#bbdefb; text-align:right; margin-top:2px;">{{ msg.timestamp|date:'H:i' }}</div>
+                        <div class="timestamp" style="font-size:0.8em; color:#bbdefb; text-align:right; margin-top:2px;">You, {{ message.timestamp|date:'H:i' }}</div>
                     </div>
                 {% else %}
                     <div class="message other-message" style="align-self: flex-start; background: #e3f2fd; color: #263238; padding: 10px 18px; border-radius: 16px 16px 16px 2px; margin-bottom: 10px; max-width: 60%;">
-                        {{ msg.get_content }}
-                        {% if msg.media %}
-                            {% if msg.media.url|lower|slice:'-4:' == '.mp4' %}
+                        <strong>{{ message.sender.username }}</strong>: {{ message.get_content }}
+                        {% if message.media %}
+                            {% if message.media.url|lower|slice:'-4:' == '.mp4' %}
                                 <video controls style="max-width:100%; border-radius:8px; margin-top:8px;">
-                                    <source src="{{ msg.media.url }}" type="video/mp4">
+                                    <source src="{{ message.media.url }}" type="video/mp4">
                                 </video>
                             {% else %}
-                                <img src="{{ msg.media.url }}" style="max-width:100%; border-radius:8px; margin-top:8px;" />
+                                <img src="{{ message.media.url }}" style="max-width:100%; border-radius:8px; margin-top:8px;" />
                             {% endif %}
                         {% endif %}
-                        <div class="timestamp" style="font-size:0.8em; color:#90caf9; text-align:left; margin-top:2px;">{{ msg.timestamp|date:'H:i' }}</div>
+                        <div class="timestamp" style="font-size:0.8em; color:#90caf9; text-align:left; margin-top:2px;">{{ message.timestamp|date:'H:i' }}</div>
                     </div>
                 {% endif %}
             {% empty %}

@@ -1,0 +1,18 @@
+{% extends 'main/base.html' %}
+{% block title %}Create Group | My Secure Social{% endblock %}
+{% block content %}
+<h2>Create Group</h2>
+<form method="post">
+    {% csrf_token %}
+    <label for="name">Group Name:</label>
+    <input type="text" name="name" id="name" required>
+    <label for="members">Add Members:</label>
+    <select name="members" id="members" multiple required style="width:100%;height:120px;">
+        {% for user in users %}
+            <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+    <button type="submit">Create Group</button>
+</form>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'main/base.html' %}
+{% block title %}Groups | My Secure Social{% endblock %}
+{% block content %}
+<h2>Your Groups</h2>
+<a href="{% url 'create_group' %}" class="button">+ Create New Group</a>
+<div style="max-width:500px;margin:24px auto 0 auto;">
+    <ul style="list-style:none;padding:0;">
+        {% for group in groups %}
+            <li style="background:#f5faff;border-radius:8px;margin-bottom:14px;padding:16px 18px;box-shadow:0 1px 4px rgba(25,118,210,0.04);display:flex;align-items:center;">
+                <div style="flex:1;">
+                    <a href="{% url 'group_chat' group.id %}" style="font-size:1.15em;font-weight:500;color:#1976d2;text-decoration:none;">{{ group.name }}</a>
+                    <div style="color:#888;font-size:0.97em;margin-top:2px;">
+                        {% with last=group.messages.last %}
+                            {% if last %}
+                                <span><strong>{{ last.sender.username }}</strong>: {{ last.get_content|truncatechars:40 }}</span>
+                            {% else %}
+                                <span>No messages yet.</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <a href="{% url 'group_chat' group.id %}" style="margin-left:12px;color:#1976d2;"><i class="fa-solid fa-comments"></i></a>
+            </li>
+        {% empty %}
+            <li style="color:#888;">You are not in any groups yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
