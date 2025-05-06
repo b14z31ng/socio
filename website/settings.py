@@ -143,7 +143,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Always use Supabase S3-compatible storage for media
-INSTALLED_APPS += ['storages']
+# INSTALLED_APPS += ['storages']
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
