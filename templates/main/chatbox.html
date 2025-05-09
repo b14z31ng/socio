@@ -323,7 +323,9 @@ document.addEventListener('DOMContentLoaded', function() {
         pc = new RTCPeerConnection({
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+                // For production, use your own TURN server for reliability
+                // Example public TURN (for demo/testing only):
+                // { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
             ]
         });
         pc.onicecandidate = e => {
@@ -358,7 +360,9 @@ document.addEventListener('DOMContentLoaded', function() {
             pc = new RTCPeerConnection({
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+                    // For production, use your own TURN server for reliability
+                    // Example public TURN (for demo/testing only):
+                    // { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
                 ]
             });
             pc.onicecandidate = e => {
