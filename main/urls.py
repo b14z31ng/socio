@@ -22,4 +22,6 @@ urlpatterns = [
     path('groups/create/', views.create_group, name='create_group'),
     path('groups/<int:group_id>/', views.group_chat, name='group_chat'),
     path('call/<int:user_id>/', views.call_user, name='call_user'),
+    path('call_history/', views.call_history, name='call_history'),
+    path('api/log_call/', views.log_call, name='log_call'),
 ]

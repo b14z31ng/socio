@@ -55,4 +55,347 @@
         </form>
     </div>
 </div>
+<!-- WebRTC Call Controls and Video UI with Modal Popup -->
+<div id="callStatus" style="margin:12px 0; color:#1976d2;"></div>
+<button id="startCallBtn" style="margin:8px 4px;">Start Call</button>
+<button id="endCallBtn" style="margin:8px 4px; display:none;">End Call</button>
+<button id="muteBtn" style="margin:8px 4px; display:none;">Mute</button>
+<button id="videoBtn" style="margin:8px 4px; display:none;">Video Off</button>
+<span id="callTimer" style="margin-left:12px; color:#607d8b; display:none;"></span>
+<video id="localVideo" autoplay muted style="width:180px;display:none;"></video>
+<video id="remoteVideo" autoplay style="width:180px;display:none;"></video>
+<audio id="ringtone" src="https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae5b2.mp3" preload="auto"></audio>
+<!-- Modal for incoming call -->
+<div id="callModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:32px; border-radius:12px; box-shadow:0 2px 16px #0002; text-align:center;">
+    <div style="font-size:1.2em; margin-bottom:16px; color:#1976d2;">Incoming call...</div>
+    <button id="acceptCallBtn" style="margin:8px 16px;">Accept</button>
+    <button id="rejectCallBtn" style="margin:8px 16px;">Reject</button>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userId = "{{ request.user.id }}";
+    const otherId = "{{ other_user.id }}";
+    const roomName = [userId, otherId].sort().join('_');
+    let ws, pc, localStream, callTimerInterval, callStartTime;
+    let isCaller = false;
+    let callAccepted = false;
+    let pendingOffer = null;
+    let wsReady = false;
+
+    const startBtn = document.getElementById('startCallBtn');
+    const endBtn = document.getElementById('endCallBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const videoBtn = document.getElementById('videoBtn');
+    const callStatus = document.getElementById('callStatus');
+    const callTimer = document.getElementById('callTimer');
+    const callModal = document.getElementById('callModal');
+    const acceptBtn = document.getElementById('acceptCallBtn');
+    const rejectBtn = document.getElementById('rejectCallBtn');
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const ringtone = document.getElementById('ringtone');
+
+    openSocket();
+
+    function openSocket() {
+        ws = new WebSocket(
+            (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+            window.location.host + `/ws/call/${roomName}/`
+        );
+        ws.onopen = () => {
+            wsReady = true;
+            if (isCaller && !callAccepted) {
+                sendOffer();
+            }
+        };
+        ws.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+            if (data.offer && !isCaller) {
+                callModal.style.display = 'flex';
+                ringtone.currentTime = 0; ringtone.play();
+                pendingOffer = data.offer;
+            } else if (data.accept && isCaller) {
+                callStatus.textContent = 'Call accepted. Connecting...';
+                callAccepted = true;
+                startWebRTC();
+            } else if (data.reject && isCaller) {
+                endCall('Call rejected.');
+            } else if (data.answer && isCaller) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            } else if (data.ice) {
+                if (pc) await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+            } else if (data.end) {
+                endCall('Call ended by other user.');
+            }
+        };
+        ws.onclose = () => endCall('Call ended.');
+    }
+
+    startBtn.onclick = function() {
+        isCaller = true;
+        callAccepted = false;
+        callStatus.textContent = 'Calling...';
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            sendOffer();
+        } else {
+            wsReady = true;
+        }
+    };
+    acceptBtn.onclick = function() {
+        ws.send(JSON.stringify({accept: true}));
+        callModal.style.display = 'none';
+        callStatus.textContent = 'Call accepted. Connecting...';
+        ringtone.pause();
+        callAccepted = true;
+        if (pendingOffer) {
+            startWebRTC(pendingOffer);
+            pendingOffer = null;
+        }
+    };
+    rejectBtn.onclick = function() {
+        ws.send(JSON.stringify({reject: true}));
+        callModal.style.display = 'none';
+        ringtone.pause();
+        endCall('Call rejected.');
+    };
+    endBtn.onclick = function() {
+        if (ws) ws.send(JSON.stringify({end: true}));
+        endCall('Call ended.');
+    };
+    muteBtn.onclick = function() {
+        if (localStream) {
+            const audio = localStream.getAudioTracks()[0];
+            audio.enabled = !audio.enabled;
+            muteBtn.textContent = audio.enabled ? 'Mute' : 'Unmute';
+        }
+    };
+    videoBtn.onclick = function() {
+        if (localStream) {
+            const video = localStream.getVideoTracks()[0];
+            video.enabled = !video.enabled;
+            videoBtn.textContent = video.enabled ? 'Video Off' : 'Video On';
+        }
+    };
+
+    async function sendOffer() {
+        pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+            ]
+        });
+        pc.onicecandidate = e => {
+            if (e.candidate) ws.send(JSON.stringify({ice: e.candidate}));
+        };
+        pc.ontrack = e => {
+            remoteVideo.srcObject = e.streams[0];
+            remoteVideo.style.display = 'block';
+        };
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        ws.send(JSON.stringify({offer}));
+    }
+
+    async function startWebRTC(offer) {
+        if (!pc) {
+            pc = new RTCPeerConnection({
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+                ]
+            });
+            pc.onicecandidate = e => {
+                if (e.candidate) ws.send(JSON.stringify({ice: e.candidate}));
+            };
+            pc.ontrack = e => {
+                remoteVideo.srcObject = e.streams[0];
+                remoteVideo.style.display = 'block';
+            };
+        }
+        localStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        localVideo.srcObject = localStream;
+        localVideo.style.display = 'block';
+        muteBtn.style.display = 'inline-block';
+        videoBtn.style.display = 'inline-block';
+        endBtn.style.display = 'inline-block';
+        startBtn.style.display = 'none';
+        callTimer.style.display = 'inline-block';
+        callStartTime = Date.now();
+        callTimerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            callTimer.textContent = `Call: ${Math.floor(elapsed/60)}:${('0'+(elapsed%60)).slice(-2)}`;
+        }, 1000);
+        if (!isCaller && offer) {
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            ws.send(JSON.stringify({answer}));
+        }
+    }
+
+    function endCall(msg) {
+        if (pc) pc.close();
+        if (ws) ws.close();
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        localVideo.style.display = 'none';
+        remoteVideo.style.display = 'none';
+        muteBtn.style.display = 'none';
+        videoBtn.style.display = 'none';
+        endBtn.style.display = 'none';
+        startBtn.style.display = 'inline-block';
+        callTimer.style.display = 'none';
+        callStatus.textContent = msg || '';
+        clearInterval(callTimerInterval);
+        ringtone.pause();
+        callModal.style.display = 'none';
+        isCaller = false;
+        callAccepted = false;
+        logCallHistory(msg);
+    }
+
+    function logCallHistory(statusMsg) {
+        let status = 'completed';
+        if (statusMsg && statusMsg.toLowerCase().includes('reject')) status = 'rejected';
+        if (statusMsg && statusMsg.toLowerCase().includes('missed')) status = 'missed';
+        const now = new Date();
+        const started = callStartTime ? new Date(callStartTime) : now;
+        const duration = callStartTime ? Math.floor((now - callStartTime) / 1000) : 0;
+        fetch('/api/log_call/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                caller_id: isCaller ? userId : otherId,
+                receiver_id: isCaller ? otherId : userId,
+                started_at: started.toISOString(),
+                ended_at: now.toISOString(),
+                status: status,
+                duration: duration
+            })
+        });
+    }
+
+    const chatRoomName = 'chat_' + [userId, otherId].sort().join('_');
+    const chatSocket = new WebSocket(
+        (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+        window.location.host + `/ws/chat/${chatRoomName}/`
+    );
+
+    let typingTimeout;
+    const typingIndicator = document.createElement('div');
+    typingIndicator.textContent = 'Typing...';
+    typingIndicator.style = 'color:#90caf9; margin:4px 0 0 8px; font-size:0.95em;';
+
+    const chatMessages = document.querySelector('.chat-messages');
+    const chatForm = document.querySelector('.chat-form');
+    const contentInput = chatForm.querySelector('input[name="content"]');
+    const fileInput = chatForm.querySelector('input[name="media"]');
+
+    contentInput.addEventListener('input', function() {
+        chatSocket.send(JSON.stringify({typing: true, sender: userId}));
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            chatSocket.send(JSON.stringify({typing: false, sender: userId}));
+        }, 1000);
+    });
+
+    contentInput.addEventListener('blur', function() {
+        chatSocket.send(JSON.stringify({typing: false, sender: userId}));
+    });
+
+    window.addEventListener('beforeunload', function() {
+        chatSocket.send(JSON.stringify({typing: false, sender: userId}));
+    });
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.typing !== undefined && data.sender != userId) {
+            if (data.typing === true) {
+                if (!chatMessages.contains(typingIndicator)) chatMessages.appendChild(typingIndicator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                if (chatMessages.contains(typingIndicator)) chatMessages.removeChild(typingIndicator);
+            }
+        }
+        if (data.message) {
+            if (chatMessages.contains(typingIndicator)) chatMessages.removeChild(typingIndicator);
+            const msg = data.message;
+            const exists = Array.from(chatMessages.children).some(div =>
+                div.textContent.includes(msg.content) && div.textContent.includes(msg.timestamp) && div.className.includes(msg.sender == userId ? 'own-message' : 'other-message')
+            );
+            if (!exists) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = (msg.sender == userId) ? 'message own-message' : 'message other-message';
+                msgDiv.style = (msg.sender == userId)
+                    ? 'align-self: flex-end; background: #1976d2; color: #fff; padding: 10px 18px; border-radius: 16px 16px 2px 16px; margin-bottom: 10px; max-width: 60%;'
+                    : 'align-self: flex-start; background: #e3f2fd; color: #263238; padding: 10px 18px; border-radius: 16px 16px 16px 2px; margin-bottom: 10px; max-width: 60%;';
+                msgDiv.innerHTML = `${msg.content}<div class='timestamp' style='font-size:0.8em; color:#bbdefb; text-align:right; margin-top:2px;'>${msg.timestamp}</div>`;
+                if (msg.media_url) {
+                    if (msg.media_url.toLowerCase().endsWith('.mp4')) {
+                        msgDiv.innerHTML += `<video controls style='max-width:100%; border-radius:8px; margin-top:8px;'><source src='${msg.media_url}' type='video/mp4'></video>`;
+                    } else {
+                        msgDiv.innerHTML += `<img src='${msg.media_url}' style='max-width:100%; border-radius:8px; margin-top:8px;' />`;
+                    }
+                }
+                chatMessages.appendChild(msgDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+        if (data.read && data.sender != userId) {
+            const lastMsg = Array.from(chatMessages.children).reverse().find(div => div.className.includes('own-message'));
+            if (lastMsg && !lastMsg.innerHTML.includes('✓')) {
+                lastMsg.innerHTML += ' <span style="color:#4caf50;">✓</span>';
+            }
+        }
+    };
+
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const content = contentInput.value;
+        const file = fileInput.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('media', file);
+            formData.append('content', content);
+            formData.append('csrfmiddlewaretoken', chatForm.querySelector('[name=csrfmiddlewaretoken]').value);
+            const response = await fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (response.ok) {
+                fileInput.value = '';
+                contentInput.value = '';
+            }
+            return;
+        }
+        if (content.trim() !== '') {
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('csrfmiddlewaretoken', chatForm.querySelector('[name=csrfmiddlewaretoken]').value);
+            const response = await fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (response.ok) {
+                contentInput.value = '';
+            }
+            if (chatMessages.contains(typingIndicator)) chatMessages.removeChild(typingIndicator);
+        }
+    });
+
+    window.addEventListener('focus', function() {
+        chatSocket.send(JSON.stringify({read: true, sender: userId}));
+    });
+});
+</script>
 {% endblock %}

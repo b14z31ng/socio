@@ -4,13 +4,18 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from .models import Profile, Post, CryptoUtils, Message, FriendRequest, Group, GroupMessage
+from .models import Profile, Post, CryptoUtils, Message, FriendRequest, Group, GroupMessage, CallHistory
 from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+import json
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 # Credential check function
 def check_credentials(username, password):
@@ -143,7 +148,25 @@ def chatbox(request, user_id):
         if content or media:
             msg = Message(sender=user, receiver=other_user, encrypted_content=content, media=media)
             msg.save()
-            return redirect('chatbox', user_id=other_user.id)
+            # Send message to WebSocket group for instant update
+            channel_layer = get_channel_layer()
+            room_name = f"chat_{min(user.id, other_user.id)}_{max(user.id, other_user.id)}"
+            async_to_sync(channel_layer.group_send)(
+                room_name,
+                {
+                    'type': 'chat_message',
+                    'message': {
+                        'sender': user.id,  # Use numeric ID for frontend compatibility
+                        'content': msg.get_content(),
+                        'media_url': msg.media.url if msg.media else '',
+                        'timestamp': msg.timestamp.strftime('%H:%M')
+                    }
+                }
+            )
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'ok': True})
+            else:
+                return redirect('chatbox', user_id=other_user.id)
     return render(request, 'main/chatbox.html', {
         'other_user': other_user,
         'messages': messages,
@@ -318,3 +341,29 @@ def group_chat(request, group_id):
 def call_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
     return render(request, 'main/call_user.html', {'other_user': user})
+
+@csrf_exempt
+def log_call(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        caller_id = data.get('caller_id')
+        receiver_id = data.get('receiver_id')
+        started_at = data.get('started_at')
+        ended_at = data.get('ended_at')
+        status = data.get('status')
+        duration = data.get('duration', 0)
+        CallHistory.objects.create(
+            caller_id=caller_id,
+            receiver_id=receiver_id,
+            started_at=started_at,
+            ended_at=ended_at,
+            status=status,
+            duration=duration
+        )
+        return JsonResponse({'ok': True})
+    return JsonResponse({'ok': False}, status=400)
+
+@login_required
+def call_history(request):
+    calls = CallHistory.objects.filter(models.Q(caller=request.user) | models.Q(receiver=request.user)).order_by('-started_at')
+    return render(request, 'main/call_history.html', {'calls': calls})

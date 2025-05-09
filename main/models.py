@@ -147,3 +147,14 @@ class GroupMessage(models.Model):
         if self.content_mac == CryptoUtils.hmac(self.encrypted_content):
             return CryptoUtils.decrypt(self.encrypted_content)
         return '[INTEGRITY CHECK FAILED]'
+
+class CallHistory(models.Model):
+    caller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='calls_made')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='calls_received')
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=16, choices=[('missed','Missed'),('rejected','Rejected'),('completed','Completed')], default='completed')
+    duration = models.IntegerField(default=0)  # seconds
+
+    def __str__(self):
+        return f"{self.caller} -> {self.receiver} ({self.status}) {self.started_at}" 
