@@ -53,10 +53,11 @@ INSTALLED_APPS += [
     'storages',
 ]
 
-INSTALLED_APPS += ['channels']
+INSTALLED_APPS += ['channels', 'channels_redis']
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add Whitenoise
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -139,6 +140,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files (Images, Videos, etc.)
 MEDIA_URL = '/media/'
@@ -176,6 +178,11 @@ AES_ENCRYPTION_KEY = b"0123456789abcdef0123456789abcdef"
 # Session settings: keep user logged in for 30 days
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Security headers for production
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 if os.environ.get("RENDER", "") == "true":
     CHANNEL_LAYERS = {
