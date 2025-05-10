@@ -29,6 +29,44 @@ body {
         border-radius: 0;
         box-shadow: none;
     }
+    .chat-sidebar {
+        display: none;
+        position: absolute;
+        z-index: 100;
+        left: 0; top: 0; bottom: 0;
+        width: 80vw;
+        max-width: 320px;
+        background: #f7fafd;
+        box-shadow: 2px 0 12px #0002;
+        transition: transform 0.2s;
+    }
+    .chat-sidebar.open {
+        display: block;
+        transform: translateX(0);
+    }
+    .sidebar-toggle {
+        display: inline-flex;
+    }
+}
+@media (min-width: 901px) {
+    .sidebar-toggle {
+        display: none !important;
+    }
+}
+.sidebar-toggle {
+    display: none;
+    position: absolute;
+    left: 12px;
+    top: 16px;
+    z-index: 200;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 1.5em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #0001;
 }
 
 .chat-sidebar {
@@ -159,6 +197,17 @@ body {
         min-width: 0;
         border-radius: 0;
     }
+    .chat-sidebar {
+        display: none !important;
+    }
+    .chat-content {
+        width: 100vw !important;
+        height: 100vh !important;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
 }
 
 .chat-form {
@@ -272,7 +321,8 @@ input[type="file"] {
 }
 </style>
 <div class="chat-container">
-    <div class="chat-sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open sidebar">&#9776;</button>
+    <div class="chat-sidebar" id="chatSidebar">
         {% include 'main/_sidebar.html' with users=users groups=groups search_query=search_query searched_users=searched_users searched_groups=searched_groups active_user=other_user %}
     </div>
     <div class="chat-content">
@@ -879,6 +929,24 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('focus', function() {
         chatSocket.send(JSON.stringify({read: true, sender: userId}));
     });
+
+    // Sidebar toggle for mobile
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const chatSidebar = document.getElementById('chatSidebar');
+    if (sidebarToggle && chatSidebar) {
+        sidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            chatSidebar.classList.toggle('open');
+        });
+        // Hide sidebar when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 900 && chatSidebar.classList.contains('open')) {
+                if (!chatSidebar.contains(e.target) && e.target !== sidebarToggle) {
+                    chatSidebar.classList.remove('open');
+                }
+            }
+        });
+    }
 
     // At the end of DOMContentLoaded, ensure the call WebSocket is opened
     openSocket();
