@@ -339,8 +339,21 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         pc.ontrack = e => {
             console.log('Remote track received (caller)');
-            remoteVideo.srcObject = e.streams[0];
-            remoteVideo.style.display = e.streams[0].getVideoTracks().length ? 'block' : 'none';
+            if (e.track.kind === 'audio') {
+                let remoteAudio = document.getElementById('remoteAudio');
+                if (!remoteAudio) {
+                    remoteAudio = document.createElement('audio');
+                    remoteAudio.id = 'remoteAudio';
+                    remoteAudio.autoplay = true;
+                    remoteAudio.style.display = 'none';
+                    document.body.appendChild(remoteAudio);
+                }
+                remoteAudio.srcObject = e.streams[0];
+            }
+            if (e.track.kind === 'video') {
+                remoteVideo.srcObject = e.streams[0];
+                remoteVideo.style.display = e.streams[0].getVideoTracks().length ? 'block' : 'none';
+            }
         };
         try {
             localStream = await getMediaWithFallback();
@@ -382,8 +395,21 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             pc.ontrack = e => {
                 console.log('Remote track received (callee)');
-                remoteVideo.srcObject = e.streams[0];
-                remoteVideo.style.display = e.streams[0].getVideoTracks().length ? 'block' : 'none';
+                if (e.track.kind === 'audio') {
+                    let remoteAudio = document.getElementById('remoteAudio');
+                    if (!remoteAudio) {
+                        remoteAudio = document.createElement('audio');
+                        remoteAudio.id = 'remoteAudio';
+                        remoteAudio.autoplay = true;
+                        remoteAudio.style.display = 'none';
+                        document.body.appendChild(remoteAudio);
+                    }
+                    remoteAudio.srcObject = e.streams[0];
+                }
+                if (e.track.kind === 'video') {
+                    remoteVideo.srcObject = e.streams[0];
+                    remoteVideo.style.display = e.streams[0].getVideoTracks().length ? 'block' : 'none';
+                }
             };
         }
         try {
