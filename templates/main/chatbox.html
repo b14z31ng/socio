@@ -31,6 +31,13 @@ body {
     }
 }
 
+.chat-sidebar {
+    flex: 0 0 250px;
+    background: #f7fafd;
+    border-right: 1px solid #e3f2fd;
+    overflow-y: auto;
+}
+
 .chat-content {
     flex: 1;
     background: #f7fafd;
@@ -58,6 +65,12 @@ body {
     border-radius: 50%;
     margin-right: 14px;
     border: 2px solid #e3f2fd;
+}
+
+.profile-icon {
+    font-size: 32px;
+    color: #1976d2;
+    margin-right: 12px;
 }
 
 .username {
@@ -258,77 +271,77 @@ input[type="file"] {
     }
 }
 </style>
-<div class="chat-container" style="display: flex; max-width: 900px; margin: 0 auto; min-height: 500px; height: 80vh;">
-    {% include 'main/_sidebar.html' with users=users groups=groups search_query=search_query searched_users=searched_users searched_groups=searched_groups active_user=other_user %}
-    <div class="chat-content" style="flex:1; background:#fff; border-radius:0 10px 10px 0; box-shadow: 0 2px 8px rgba(25,118,210,0.06); display:flex; flex-direction:column; height:100%; min-width:0;">
-        <div class="chat-header" style="padding: 18px 24px; border-bottom: 1px solid #e3f2fd; display:flex; align-items:center;">
+<div class="chat-container">
+    <div class="chat-sidebar">
+        {% include 'main/_sidebar.html' with users=users groups=groups search_query=search_query searched_users=searched_users searched_groups=searched_groups active_user=other_user %}
+    </div>
+    <div class="chat-content">
+        <div class="chat-header">
             {% if other_user.profile.get_profile_pic_url %}
-                <img src="{{ other_user.profile.get_profile_pic_url }}" class="profile-picture" style="width:36px; height:36px; object-fit:cover; border-radius:50%; margin-right:12px;" />
+                <img src="{{ other_user.profile.get_profile_pic_url }}" class="profile-picture" />
             {% else %}
-                <span class="profile-icon" style="font-size: 32px; color: #1976d2; margin-right: 12px;">&#128100;</span>
+                <span class="profile-icon">&#128100;</span>
             {% endif %}
-            <span class="username" style="font-size:1.2em; color:#1976d2; font-weight:500;"><a href="{% url 'user_profile' other_user.id %}" style="color:inherit; text-decoration:underline;">{{ other_user.username }}</a></span>
+            <span class="username"><a href="{% url 'user_profile' other_user.id %}">{{ other_user.username }}</a></span>
         </div>
-        <div class="chat-messages" id="chatMessages" style="flex:1; overflow-y:auto; padding: 24px; display:flex; flex-direction:column; min-height:0; max-height:100%;">
+        <div class="chat-messages" id="chatMessages">
             {% for msg in messages %}
                 {% if msg.sender == request.user %}
-                    <div class="message own-message" style="align-self: flex-end; background: #1976d2; color: #fff; padding: 10px 18px; border-radius: 16px 16px 2px 16px; margin-bottom: 10px; max-width: 60%;">
+                    <div class="message own-message">
                         {{ msg.get_content }}
                         {% if msg.media %}
                             {% if msg.media.url|lower|slice:'-4:' == '.mp4' %}
-                                <video controls style="max-width:100%; border-radius:8px; margin-top:8px;">
-                                    <source src="{{ msg.media.url }}" type="video/mp4">
-                                </video>
+                                <video controls><source src="{{ msg.media.url }}" type="video/mp4"></video>
                             {% else %}
-                                <img src="{{ msg.media.url }}" style="max-width:100%; border-radius:8px; margin-top:8px;" />
+                                <img src="{{ msg.media.url }}" />
                             {% endif %}
                         {% endif %}
-                        <div class="timestamp" style="font-size:0.8em; color:#bbdefb; text-align:right; margin-top:2px;">{{ msg.timestamp|date:'H:i' }}</div>
+                        <div class="timestamp">{{ msg.timestamp|date:'H:i' }}</div>
                     </div>
                 {% else %}
-                    <div class="message other-message" style="align-self: flex-start; background: #e3f2fd; color: #263238; padding: 10px 18px; border-radius: 16px 16px 16px 2px; margin-bottom: 10px; max-width: 60%;">
+                    <div class="message other-message">
                         {{ msg.get_content }}
                         {% if msg.media %}
                             {% if msg.media.url|lower|slice:'-4:' == '.mp4' %}
-                                <video controls style="max-width:100%; border-radius:8px; margin-top:8px;">
-                                    <source src="{{ msg.media.url }}" type="video/mp4">
-                                </video>
+                                <video controls><source src="{{ msg.media.url }}" type="video/mp4"></video>
                             {% else %}
-                                <img src="{{ msg.media.url }}" style="max-width:100%; border-radius:8px; margin-top:8px;" />
+                                <img src="{{ msg.media.url }}" />
                             {% endif %}
                         {% endif %}
-                        <div class="timestamp" style="font-size:0.8em; color:#90caf9; text-align:left; margin-top:2px;">{{ msg.timestamp|date:'H:i' }}</div>
+                        <div class="timestamp">{{ msg.timestamp|date:'H:i' }}</div>
                     </div>
                 {% endif %}
             {% empty %}
-                <div class="no-messages" style="color:#b0bec5; text-align:center;">No messages yet. Say hi!</div>
+                <div class="no-messages">No messages yet. Say hi!</div>
             {% endfor %}
         </div>
-        <form method="post" enctype="multipart/form-data" class="chat-form" style="padding: 18px 24px; border-top: 1px solid #e3f2fd; display:flex; align-items:center; gap:8px;">
+        <form method="post" enctype="multipart/form-data" class="chat-form">
             {% csrf_token %}
-            <input type="text" name="content" placeholder="Type a message..." class="message-input" style="flex:1; padding:10px; border-radius:8px; border:1px solid #cfd8dc; font-size:1em;">
-            <input type="file" name="media" accept="image/*,video/*" style="max-width:180px;">
-            <button type="submit" class="send-button" style="padding:10px 18px;"><i class="fa-solid fa-paper-plane"></i></button>
+            <input type="text" name="content" placeholder="Type a message..." class="message-input">
+            <input type="file" name="media" accept="image/*,video/*">
+            <button type="submit" class="send-button"><i class="fa-solid fa-paper-plane"></i></button>
         </form>
+        <div class="call-controls">
+            <div id="callStatus"></div>
+            <button id="startCallBtn" disabled>Start Call</button>
+            <button id="endCallBtn" style="display:none;">End Call</button>
+            <button id="muteBtn" style="display:none;">Mute</button>
+            <button id="videoBtn" style="display:none;">Video Off</button>
+            <span id="callTimer" style="display:none;"></span>
+        </div>
+        <div class="video-section">
+            <video id="localVideo" autoplay muted style="display:none;"></video>
+            <video id="remoteVideo" autoplay style="display:none;"></video>
+        </div>
+        <audio id="ringtone" src="https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae5b2.mp3" preload="auto"></audio>
+        <div id="callModal" style="display:none;">
+          <div>
+            <div>Incoming call...</div>
+            <button id="acceptCallBtn">Accept</button>
+            <button id="rejectCallBtn">Reject</button>
+          </div>
+        </div>
     </div>
-</div>
-<!-- WebRTC Call Controls and Video UI with Modal Popup -->
-<div id="callStatus" style="margin:12px 0; color:#1976d2;"></div>
-<button id="startCallBtn" style="margin:8px 4px; background:#e53935; color:#fff; border:none; border-radius:5px; padding:10px 18px; cursor:not-allowed; opacity:0.7;" disabled>Start Call</button>
-<button id="endCallBtn" style="margin:8px 4px; display:none;">End Call</button>
-<button id="muteBtn" style="margin:8px 4px; display:none;">Mute</button>
-<button id="videoBtn" style="margin:8px 4px; display:none;">Video Off</button>
-<span id="callTimer" style="margin-left:12px; color:#607d8b; display:none;"></span>
-<video id="localVideo" autoplay muted style="width:180px;display:none;"></video>
-<video id="remoteVideo" autoplay style="width:180px;display:none;"></video>
-<audio id="ringtone" src="https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae5b2.mp3" preload="auto"></audio>
-<!-- Modal for incoming call -->
-<div id="callModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
-  <div style="background:#fff; padding:32px; border-radius:12px; box-shadow:0 2px 16px #0002; text-align:center;">
-    <div style="font-size:1.2em; margin-bottom:16px; color:#1976d2;">Incoming call...</div>
-    <button id="acceptCallBtn" style="margin:8px 16px;">Accept</button>
-    <button id="rejectCallBtn" style="margin:8px 16px;">Reject</button>
-  </div>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
