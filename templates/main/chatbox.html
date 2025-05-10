@@ -31,7 +31,7 @@ body {
     }
     .chat-sidebar {
         display: none;
-        position: absolute;
+        position: fixed;
         z-index: 100;
         left: 0; top: 0; bottom: 0;
         width: 80vw;
@@ -46,6 +46,8 @@ body {
     }
     .sidebar-toggle {
         display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 }
 @media (min-width: 901px) {
@@ -59,14 +61,14 @@ body {
     left: 12px;
     top: 16px;
     z-index: 200;
-    background: #1976d2;
-    color: #fff;
+    background: none;
+    color: #1976d2;
     border: none;
     border-radius: 6px;
     padding: 8px 12px;
-    font-size: 1.5em;
+    font-size: 2em;
     cursor: pointer;
-    box-shadow: 0 2px 8px #0001;
+    box-shadow: none;
 }
 
 .chat-sidebar {
@@ -94,6 +96,24 @@ body {
     align-items: center;
     background: #fff;
     min-height: 60px;
+    position: relative;
+}
+@media (max-width: 600px) {
+    .chat-header {
+        padding: 10px 8px 10px 44px; /* leave space for sidebar toggle */
+        min-height: 48px;
+        font-size: 1em;
+    }
+    .profile-picture, .profile-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 24px;
+        margin-right: 8px;
+    }
+    .username {
+        font-size: 1em;
+        word-break: break-word;
+    }
 }
 
 .profile-picture {
@@ -120,7 +140,7 @@ body {
 .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 16px 16px 16px;
+    padding: 16px 8px 8px 8px;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -130,40 +150,32 @@ body {
 
 .message {
     word-break: break-word;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     max-width: 80vw;
-    font-size: 1.05em;
+    font-size: 1em;
     line-height: 1.5;
-    box-shadow: 0 1px 4px rgba(25,118,210,0.04);
-    transition: background 0.2s;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: #e3f2fd;
+    color: #263238;
+    align-self: flex-start;
+    box-shadow: none;
 }
 .own-message {
-    align-self: flex-end;
     background: #1976d2;
     color: #fff;
-    padding: 12px 20px;
-    border-radius: 18px 18px 4px 18px;
-    max-width: 70%;
-    text-align: left;
-    direction: ltr;
-    margin-left: 40px;
+    align-self: flex-end;
 }
 .other-message {
-    align-self: flex-start;
     background: #fff;
     color: #263238;
-    padding: 12px 20px;
-    border-radius: 18px 18px 18px 4px;
-    max-width: 70%;
-    text-align: left;
-    direction: ltr;
-    margin-right: 40px;
+    align-self: flex-start;
     border: 1px solid #e3f2fd;
 }
 .timestamp {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: #90caf9;
-    margin-top: 4px;
+    margin-top: 2px;
     text-align: right;
 }
 @media (max-width: 600px) {
@@ -211,36 +223,38 @@ body {
 }
 
 .chat-form {
-    padding: 16px 20px;
-    border-top: 1px solid #e3f2fd;
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 10px 8px;
+    border-top: 1px solid #e3f2fd;
     background: #fff;
 }
 .message-input {
     flex: 1;
-    padding: 12px;
+    padding: 10px;
     border-radius: 8px;
     border: 1px solid #cfd8dc;
     font-size: 1em;
     background: #f7fafd;
 }
 .send-button {
-    padding: 10px 18px;
+    padding: 8px 14px;
     background: #1976d2;
     color: #fff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.2s;
-    font-size: 1.1em;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.send-button:hover {
-    background: #1565c0;
+.send-button i {
+    margin: 0;
 }
 input[type="file"] {
-    max-width: 180px;
+    max-width: 120px;
     background: #f7fafd;
     border-radius: 6px;
     border: 1px solid #cfd8dc;
@@ -321,7 +335,9 @@ input[type="file"] {
 }
 </style>
 <div class="chat-container">
-    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open sidebar">&#9776;</button>
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open sidebar">
+        <span style="font-size:1.7em;line-height:1;">&#9776;</span>
+    </button>
     <div class="chat-sidebar" id="chatSidebar">
         {% include 'main/_sidebar.html' with users=users groups=groups search_query=search_query searched_users=searched_users searched_groups=searched_groups active_user=other_user %}
     </div>
@@ -369,7 +385,7 @@ input[type="file"] {
             {% csrf_token %}
             <input type="text" name="content" placeholder="Type a message..." class="message-input">
             <input type="file" name="media" accept="image/*,video/*">
-            <button type="submit" class="send-button"><i class="fa-solid fa-paper-plane"></i></button>
+            <button type="submit" class="send-button" title="Send"><span style="font-size:1.3em;">&#x1F4E7;</span></button>
         </form>
         <div class="call-controls">
             <div id="callStatus"></div>
@@ -930,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
         chatSocket.send(JSON.stringify({read: true, sender: userId}));
     });
 
-    // Sidebar toggle for mobile
+    // Sidebar toggle for mobile (drawer)
     const sidebarToggle = document.getElementById('sidebarToggle');
     const chatSidebar = document.getElementById('chatSidebar');
     if (sidebarToggle && chatSidebar) {
